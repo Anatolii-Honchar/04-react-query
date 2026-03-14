@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import ReactPaginate from "react-paginate";
 import toast from "react-hot-toast";
@@ -19,20 +19,31 @@ export default function App() {
   const [page, setPage] = useState(1);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, isSuccess, isFetching } = useQuery({
     queryKey: ["movies", query, page],
     queryFn: () => fetchMovies(query, page),
     enabled: query !== "",
+    placeholderData: (previousData) => previousData,
   });
 
-  const handleSearch = (query: string) => {
-    setQuery(query);
+  const handleSearch = (newQuery: string) => {
+    setQuery(newQuery);
     setPage(1);
   };
 
-  if (data?.results.length === 0) {
-    toast.error("No movies found for your request.");
-  }
+  const handleSelectMovie = (movie: Movie) => {
+    setSelectedMovie(movie);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedMovie(null);
+  };
+
+  useEffect(() => {
+    if (isSuccess && data.results.length === 0) {
+      toast.error("No movies found for your request.");
+    }
+  }, [isSuccess, data]);
 
   const movies = data?.results ?? [];
   const totalPages = data?.total_pages ?? 0;
@@ -45,7 +56,7 @@ export default function App() {
 
       {isError && <ErrorMessage />}
 
-      {totalPages > 1 && (
+      {isSuccess && totalPages > 1 && (
         <ReactPaginate
           pageCount={totalPages}
           pageRangeDisplayed={5}
@@ -59,15 +70,14 @@ export default function App() {
         />
       )}
 
-      {movies.length > 0 && (
-        <MovieGrid movies={movies} onSelect={setSelectedMovie} />
+      {isSuccess && movies.length > 0 && (
+        <MovieGrid movies={movies} onSelect={handleSelectMovie} />
       )}
 
+      {isFetching && !isLoading && <Loader />}
+
       {selectedMovie && (
-        <MovieModal
-          movie={selectedMovie}
-          onClose={() => setSelectedMovie(null)}
-        />
+        <MovieModal movie={selectedMovie} onClose={handleCloseModal} />
       )}
     </div>
   );
