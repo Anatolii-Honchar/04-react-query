@@ -48,11 +48,18 @@ export default function App() {
   const movies = data?.results ?? [];
   const totalPages = data?.total_pages ?? 0;
 
+  if (isLoading) {
+    return (
+      <div className={css.app}>
+        <SearchBar onSubmit={handleSearch} />
+        <Loader />
+      </div>
+    );
+  }
+
   return (
     <div className={css.app}>
       <SearchBar onSubmit={handleSearch} />
-
-      {isLoading && <Loader />}
 
       {isError && <ErrorMessage />}
 
@@ -74,7 +81,7 @@ export default function App() {
         <MovieGrid movies={movies} onSelect={handleSelectMovie} />
       )}
 
-      {isFetching && !isLoading && <Loader />}
+      {isFetching && <Loader />}
 
       {selectedMovie && (
         <MovieModal movie={selectedMovie} onClose={handleCloseModal} />
