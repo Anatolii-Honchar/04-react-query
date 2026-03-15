@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import ReactPaginate from "react-paginate";
 import toast from "react-hot-toast";
 
@@ -23,7 +23,7 @@ export default function App() {
     queryKey: ["movies", query, page],
     queryFn: () => fetchMovies(query, page),
     enabled: query !== "",
-    placeholderData: (previousData) => previousData,
+    placeholderData: keepPreviousData,
   });
 
   const handleSearch = (newQuery: string) => {
@@ -40,22 +40,13 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (isSuccess && data.results.length === 0) {
+    if (isSuccess && data?.results.length === 0) {
       toast.error("No movies found for your request.");
     }
   }, [isSuccess, data]);
 
   const movies = data?.results ?? [];
   const totalPages = data?.total_pages ?? 0;
-
-  if (isLoading) {
-    return (
-      <div className={css.app}>
-        <SearchBar onSubmit={handleSearch} />
-        <Loader />
-      </div>
-    );
-  }
 
   return (
     <div className={css.app}>
@@ -77,11 +68,11 @@ export default function App() {
         />
       )}
 
-      {isSuccess && movies.length > 0 && (
+      {movies.length > 0 && (
         <MovieGrid movies={movies} onSelect={handleSelectMovie} />
       )}
 
-      {isFetching && <Loader />}
+      {(isLoading || isFetching) && <Loader />}
 
       {selectedMovie && (
         <MovieModal movie={selectedMovie} onClose={handleCloseModal} />
